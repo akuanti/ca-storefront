@@ -21,15 +21,12 @@ contract Storefront is Owned {
     uint public balance;
 
     struct Product {
-        uint id;
         uint price;
         uint quantity;
+        bool exists;
     }
 
     mapping (uint => Product) public products;
-    mapping (uint => bool) public productExists;
-
-
 
     event LogDeposit(address sender, uint amount);
     event LogProductAdded(address sender, uint id, uint price, uint quantity);
@@ -55,16 +52,15 @@ contract Storefront is Owned {
         onlyOwner
     {
         require(quantity > 0);
-        require(productExists[productId] == false);
+        require(products[productId].exists == false);
 
         Product memory p = Product({
-            id: productId,
             price: price,
-            quantity: quantity
+            quantity: quantity,
+            exists: true
         });
 
         products[productId] = p;
-        productExists[productId] = true;
 
         LogProductAdded(msg.sender, productId, price, quantity);
     }
@@ -74,7 +70,7 @@ contract Storefront is Owned {
         onlyOwner
     {
         require(quantity > 0);
-        require(productExists[productId]);
+        require(products[productId].exists);
 
         products[productId].quantity += quantity;
         LogStockAdded(msg.sender, productId, quantity);
@@ -102,6 +98,9 @@ contract Storefront is Owned {
         public
         payable
     {
+        // product needs to exist
+        require(products[id].exists);
+
         // there needs to be enough product
         require(products[id].quantity > 0);
 

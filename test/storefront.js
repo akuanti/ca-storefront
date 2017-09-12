@@ -52,16 +52,12 @@ contract('Storefront', function(accounts) {
           return storefront.products.call(product.id);
         })
         .then(_product => {
-          var [_id, _price, _quantity] = _product;
+          var [_price, _quantity, _exists] = _product;
           // console.log(product);
-          assert.strictEqual(_id.toNumber(), product.id, "Product ID is wrong");
           assert.strictEqual(_price.toNumber(), product.price, "Price is wrong");
           assert.strictEqual(_quantity.toNumber(), product.quantity, "Quantity is wrong");
-          return storefront.productExists.call(product.id);
+          assert.strictEqual(_exists, true, "Product is not marked as existing");
         })
-        .then(exists => {
-          assert.strictEqual(exists, true, "Product is not marked as existing");
-        });
     });
 
     it("should only let the owner add a product", async function() {
@@ -95,7 +91,7 @@ contract('Storefront', function(accounts) {
           return storefront.products.call(product.id);
         })
         .then(_product => {
-          assert.strictEqual(_product[2].toNumber(), product.quantity + toAdd, "Product quantity is wrong");
+          assert.strictEqual(_product[1].toNumber(), product.quantity + toAdd, "Product quantity is wrong");
         });
     });
 
@@ -114,7 +110,7 @@ contract('Storefront', function(accounts) {
           return storefront.products.call(product.id);
         })
         .then(_product => {
-          let quantity = _product[2];
+          let quantity = _product[1];
           assert.strictEqual(quantity.toNumber(), product.quantity - 1, "Quantity left is wrong")
           return storefront.balance.call();
         })
@@ -133,6 +129,12 @@ contract('Storefront', function(accounts) {
       await storefront.buyProduct(product.id, {from: user, value: product.price});
       await expectThrow(
         storefront.buyProduct(product.id, {from: user, value: product.price})
+      );
+    });
+
+    it("should not let a user buy a non-existent product", async function() {
+      await expectThrow(
+        storefront.buyProduct(59, {from: user, value: 10})
       );
     });
 
